@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="90" viewBox="0 0 240 90">
+  <defs><style>.w{stroke:#fff;stroke-width:2;fill:none}.f{fill:#fff}</style></defs>
+  <g transform="translate(120,32)">
+    <circle r="22" class="w"/>
+    <ellipse rx="18" ry="22" class="w"/>
+    <ellipse rx="22" ry="9" class="w"/>
+    <g transform="rotate(-20)">
+      <ellipse rx="26" ry="12" class="w" opacity=".9"/>
+      <g transform="translate(26,0) rotate(15)">
+        <path class="f" d="M0,0 L-10,4 L-6,1 L-16,-3 L-2,-2 L0,0 Z"/>
+      </g>
+    </g>
+  </g>
+  <text x="120" y="78" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="28" fill="#fff" letter-spacing=".5">GLOBTREK</text>
+</svg>
