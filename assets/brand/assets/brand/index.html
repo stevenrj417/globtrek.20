@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Globtrek — Plan. Book. Go.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>.hero{background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.45)),url('https://images.unsplash.com/photo-1493558103817-58b2924bce98?w=2000&auto=format&fit=crop&q=80') center/cover no-repeat}</style>
+</head>
+<body class="bg-white text-neutral-900 font-[Inter]">
+<header class="sticky top-0 bg-white/90 backdrop-blur border-b border-neutral-200 z-40">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3">
+      <img src="assets/brand/logo-dark.svg" alt="Globtrek" class="h-10">
+    </a>
+    <nav class="hidden md:flex items-center gap-6">
+      <a class="hover:text-black/80" href="#">Discover</a>
+      <a class="hover:text-black/80" href="#">Plan</a>
+      <a class="hover:text-black/80" href="#">AI Planner</a>
+      <a class="hover:text-black/80" href="#">About</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero text-white">
+  <div class="max-w-7xl mx-auto px-4 py-24 md:py-40">
+    <img src="assets/brand/logo-white.svg" alt="Globtrek" class="h-12 mb-6 opacity-95">
+    <h1 class="text-4xl md:text-6xl font-extrabold leading-tight">Travel that <span class="text-[#4dbdff]">plans itself</span>.</h1>
+    <p class="mt-4 text-white/90 text-lg md:text-xl max-w-2xl">Tell Globtrek your vibe, dates, and budget. Get a ready-to-book itinerary—no tab hopping.</p>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 py-12">
+  <h2 class="text-2xl font-extrabold mb-3">Popular right now</h2>
+  <p class="text-neutral-600 mb-6">Click a destination to explore (more pages coming next).</p>
+  <div id="popular" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+</section>
+
+<footer class="border-t border-neutral-200 py-8 text-center text-neutral-600">
+  © <span id="year"></span> Globtrek — Built for speed.
+</footer>
+
+<script src="app.js"></script>
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+(async ()=>{
+  const data = await loadDestinations();
+  document.getElementById('popular').innerHTML = data.map(destinationCard).join('');
+})();
+</script>
+</body></html>
