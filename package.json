@@ -1,4 +1,16 @@
 {
+  "name": "globtrek",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    ...
+  }
+}{
   "name": "globtrek-20",
   "private": true,
   "scripts": {
