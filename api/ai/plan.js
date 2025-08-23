@@ -1,15 +1,14 @@
 // api/ai/plan.js
-// Vercel serverless function for GlobTrek planner
-// Requires env var: OPENAI_API_KEY  (and optional GLOB_MODEL)
+// Vercel serverless function for GlobTrek
+// Env vars: OPENAI_API_KEY (required), GLOB_MODEL (optional)
 
-const MODEL = process.env.GLOB_MODEL || "gpt-5-mini"; // e.g. "gpt-5-mini" or "gpt-4.1-nano"
+const MODEL = process.env.GLOB_MODEL || "gpt-5-mini";
 
 function clampDays(n) {
   const x = Number(n);
   return Number.isFinite(x) ? Math.max(1, Math.min(30, Math.floor(x))) : 1;
 }
-
-function safeJsonParse(s) {
+function safeParseJSON(s) {
   try { return JSON.parse(s); } catch { return null; }
 }
 
@@ -19,32 +18,31 @@ export default async function handler(req, res) {
       res.status(405).json({ error: "Use POST" });
       return;
     }
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      res.status(500).json({ error: "Missing OPENAI_API_KEY on the server" });
+    if (!process.env.OPENAI_API_KEY) {
+      res.status(500).json({ error: "Missing OPENAI_API_KEY" });
       return;
     }
 
-    // Body can be object or string (depending on hosting/proxy)
-    const raw = typeof req.body === "string" ? safeJsonParse(req.body) : req.body || {};
-    const destination = String(raw.destination || "").trim();
-    const days = clampDays(raw.days || 0);
-    const budget = String(raw.budget || "").trim();
-    const pace = String(raw.pace || "").trim(); // relaxed | balanced | packed
-    const interests = Array.isArray(raw.interests) ? raw.interests.slice(0, 8) : [];
-    const followUp = raw.followUpAnswers || {};
-    const profile = raw.profile || null;
+    // Body may be string or object
+    const body = typeof req.body === "string" ? safeParseJSON(req.body) || {} : (req.body || {});
+    const destination = String(body.destination || "").trim();
+    const days = clampDays(body.days || 0);
+    const budget = String(body.budget || "").trim();
+    const pace = String(body.pace || "").trim();
+    const interests = Array.isArray(body.interests) ? body.interests.slice(0, 8) : [];
+    const followUpAnswers = body.followUpAnswers || {};
+    const profile = body.profile || null;
 
     const merged = {
       destination,
       days,
-      budget: followUp.budget || budget,
-      pace: followUp.pace || pace,
-      interests: followUp.interests || interests,
+      budget: followUpAnswers.budget || budget,
+      pace: followUpAnswers.pace || pace,
+      interests: followUpAnswers.interests || interests,
       profile,
     };
 
-    // Ask for missing bits first
+    // Ask for missing inputs first
     const needs = [];
     if (!merged.destination) needs.push("destination");
     if (!merged.days) needs.push("days");
@@ -53,68 +51,66 @@ export default async function handler(req, res) {
     if (!merged.interests?.length) needs.push("interests");
 
     if (needs.length) {
-      const questions = [];
-      if (needs.includes("destination")) questions.push("Where do you want to go?");
-      if (needs.includes("days"))        questions.push("How many days?");
-      if (needs.includes("budget"))      questions.push("Budget? (low / mid / high)");
-      if (needs.includes("pace"))        questions.push("Preferred pace? (relaxed / balanced / packed)");
-      if (needs.includes("interests"))   questions.push("Top interests? (food, history, nature, nightlife, art, shopping, hikes, beaches)");
-      res.json({ status: "need_info", needs, questions });
+      const q = [];
+      if (needs.includes("destination")) q.push("Where do you want to go?");
+      if (needs.includes("days"))        q.push("How many days?");
+      if (needs.includes("budget"))      q.push("Budget? (low / mid / high)");
+      if (needs.includes("pace"))        q.push("Preferred pace? (relaxed / balanced / packed)");
+      if (needs.includes("interests"))   q.push("Top interests? (food, history, nature, nightlife, art, shopping)");
+      res.json({ status: "need_info", needs, questions: q });
       return;
     }
 
     const system = `You are GlobTrek, a meticulous trip designer. OUTPUT STRICT JSON ONLY:
 {
-  "summary": "one-paragraph overview tailored to the traveler",
-  "best_time": "best months or seasons with 1-line reason",
+  "summary": "...",
+  "best_time": "...",
   "daily": [
     {
       "day": 1,
-      "theme": "short title for the day",
-      "morning": "activities & areas",
-      "afternoon": "activities & areas",
-      "evening": "activities & areas",
-      "neighborhoods": ["area1","area2"],
-      "food": ["specific place 1","specific place 2"],
-      "notes": "local tips/logistics"
+      "theme": "...",
+      "morning": "...",
+      "afternoon": "...",
+      "evening": "...",
+      "neighborhoods": ["..."],
+      "food": ["...","..."],
+      "notes": "..."
     }
   ],
-  "estimated_costs": {
-    "currency": "USD",
-    "per_day": {"low": 0, "mid": 0, "high": 0},
-    "notes": "brief note on what drives costs"
-  },
-  "tips": ["one-line tip","another tip"],
-  "next_questions": ["short follow-up to refine"]
+  "estimated_costs": { "currency": "USD", "per_day": { "low": 0, "mid": 0, "high": 0 }, "notes": "..." },
+  "tips": ["...","..."],
+  "next_questions": ["..."]
 }
-Keep routes geographically sensible; avoid backtracking.`;
+Keep routes geographically sensible and prices realistic.`;
 
-    const traveler = merged.profile ? `
+    const traveler = profile ? `
 Traveler:
-- name: ${merged.profile.name || "guest"}
-- homeAirport: ${merged.profile.homeAirport || "unspecified"}
-- dietary: ${merged.profile.dietary || "none"}
-- mobility: ${merged.profile.mobility || "none"}
-- lodging: ${merged.profile.lodging || "standard"}
-- style: ${merged.profile.style || merged.pace || "balanced"}` : "Traveler: not provided";
+- name: ${profile.name || "guest"}
+- homeAirport: ${profile.homeAirport || "unspecified"}
+- dietary: ${profile.dietary || "none"}
+- mobility: ${profile.mobility || "none"}
+- lodging: ${profile.lodging || "standard"}
+- style: ${profile.style || "balanced"}` : "Traveler: not provided";
 
     const user = `Destination: ${merged.destination}
 Days: ${merged.days}
 Budget: ${merged.budget}
 Pace: ${merged.pace}
 Interests: ${(merged.interests || []).join(", ") || "general"}
-${traveler}
-Constraints:
-- Produce exactly ${merged.days} items in "daily" (day 1..${merged.days})
-- Include 1–2 neighborhoods each day
-- Include 2+ specific food ideas per day when possible
-- JSON ONLY, no extra text`;
 
-    // Call OpenAI — no temperature included (some models require default=1)
+${traveler}
+
+Constraints:
+- daily must have exactly ${merged.days} items (1..${merged.days})
+- include neighborhoods each day
+- include at least 2 specific food ideas per day when possible
+- Respond with JSON only`;
+
+    // Call OpenAI — NO temperature (some models only accept the default)
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -127,54 +123,49 @@ Constraints:
     });
 
     if (!r.ok) {
-      const errTxt = await r.text();
-      res.status(500).json({ error: `OpenAI ${r.status}: ${errTxt}` });
+      res.status(500).json({ error: `OpenAI ${r.status}: ${await r.text()}` });
       return;
     }
 
     const data = await r.json();
     const content = data?.choices?.[0]?.message?.content?.trim() || "";
 
-    // Safely extract JSON (some models may wrap or add stray chars)
-    let json = safeJsonParse(content);
+    // Try to parse JSON, even if wrapped
+    let json = safeParseJSON(content);
     if (!json) {
-      const match = content.match(/\{[\s\S]*\}$/);
-      json = match ? safeJsonParse(match[0]) : null;
+      const m = content.match(/\{[\s\S]*\}$/);
+      json = m ? safeParseJSON(m[0]) : null;
     }
 
-    let textPlan = "No plan returned.";
+    let text = "No plan returned.";
     if (json?.daily?.length) {
-      const parts = [
+      const lines = [
         `GlobTrek — ${merged.destination} • ${merged.days} days`,
         json.summary ? `\nSummary: ${json.summary}` : "",
         json.best_time ? `When to go: ${json.best_time}` : "",
         "",
-        ...json.daily.map((d) => ([
+        ...json.daily.map(d => ([
           `Day ${d.day}: ${d.theme || "Explore"}`,
-          d.morning   ? `  Morning: ${d.morning}`   : "",
-          d.afternoon ? `  Afternoon: ${d.afternoon}` : "",
-          d.evening   ? `  Evening: ${d.evening}`   : "",
+          d.morning      ? `  Morning: ${d.morning}`     : "",
+          d.afternoon    ? `  Afternoon: ${d.afternoon}` : "",
+          d.evening      ? `  Evening: ${d.evening}`     : "",
           d.neighborhoods?.length ? `  Areas: ${d.neighborhoods.join(", ")}` : "",
           d.food?.length ? `  Food: ${d.food.join(" • ")}` : "",
-          d.notes ? `  Notes: ${d.notes}` : "",
+          d.notes        ? `  Notes: ${d.notes}` : "",
           ""
-        ].filter(Boolean).join("\n"))),
-        json.estimated_costs
-          ? `Estimated (per day, ${json.estimated_costs.currency || "USD"}): low ${json.estimated_costs.per_day?.low}, mid ${json.estimated_costs.per_day?.mid}, high ${json.estimated_costs.per_day?.high}`
-          : "",
-        json.tips?.length ? `\nTips: ${json.tips.join(" · ")}` : ""
+        ].filter(Boolean).join("\n")))
       ].filter(Boolean);
-      textPlan = parts.join("\n");
+      text = lines.join("\n");
     } else if (content) {
-      textPlan = content;
+      text = content;
     }
 
     res.json({
       status: "ok",
-      plan: textPlan,
+      plan: text,
       planJson: json || null,
       next_questions: json?.next_questions || [],
-      model_used: MODEL,
+      model_used: MODEL
     });
   } catch (e) {
     res.status(500).json({ error: `Planner failed: ${e.message || "unknown"}` });
