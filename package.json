@@ -1,6 +1,7 @@
 {
-  "name": "globtrek",
+  "name": "globtrek.20",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -8,22 +9,8 @@
     "start": "next start"
   },
   "dependencies": {
-    ...
-  }
-}{
-  "name": "globtrek-20",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint || true"
-  },
-  "dependencies": {
     "next": "14.2.5",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "swr": "2.2.5",
-    "lucide-react": "0.447.0"
+    "react-dom": "18.2.0"
   }
 }
