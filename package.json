@@ -1,16 +1,105 @@
 {
-  "name": "globtrek.20",
-  "version": "1.0.0",
+  "name": "globtrek",
+  "version": "0.1.0",
   "private": true,
+  "description": "GlobTrek — plan smarter trips in minutes.",
+  "author": "Steven Johnston",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stevenrj417/globtrek.20.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stevenrj417/globtrek.20/issues"
+  },
+  "homepage": "https://globtrek-app.vercel.app",
   "type": "module",
+  "engines": {
+    "node": ">=18.18.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
+    "// ---------------- dev & build ----------------": "",
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "build": "rimraf .next && next build",
+    "start": "next start -p ${PORT:-3000}",
+    "analyze": "ANALYZE=true next build",
+    "prepare": "husky install",
+
+    "// ---------------- quality gates --------------": "",
+    "lint": "eslint . --ext .js,.cjs,.mjs,.ts,.tsx --max-warnings=0",
+    "lint:fix": "eslint . --ext .js,.cjs,.mjs,.ts,.tsx --fix",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+
+    "// ---------------- testing --------------------": "",
+    "test": "run-s test:unit",
+    "test:ci": "run-s typecheck lint format:check test:unit test:e2e",
+    "test:unit": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+
+    "// ---------------- scripts --------------------": "",
+    "clean": "rimraf node_modules .next .turbo coverage .vitest .playwright",
+    "postinstall": "playwright install --with-deps || true"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.0.2",
+    "@tanstack/react-query": "^5.51.15",
+    "axios": "^1.7.7",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
     "next": "14.2.5",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "next-seo": "^6.5.0",
+    "next-sitemap": "^4.2.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.2",
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^20.14.12",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.5.0",
+    "@typescript-eslint/parser": "^8.5.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.9.0",
+    "eslint-config-next": "14.2.5",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.30.0",
+    "eslint-plugin-simple-import-sort": "^12.1.0",
+    "husky": "^9.1.5",
+    "jsdom": "^25.0.0",
+    "lint-staged": "^15.2.9",
+    "postcss": "^8.4.41",
+    "prettier": "^3.3.3",
+    "rimraf": "^6.0.1",
+    "run-script-os": "^1.1.6",
+    "npm-run-all": "^4.1.5",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.4",
+    "vite-tsconfig-paths": "^5.0.1",
+    "vitest": "^2.0.5"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,css,md,json}": [
+      "prettier --write"
+    ],
+    "*.{js,ts,tsx}": [
+      "eslint --fix"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "nextBundleAnalysis": {
+    "enabled": true
   }
 }
